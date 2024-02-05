@@ -1,7 +1,7 @@
 # cnu_announcement_discordBot
 
 ## skills
-<img src="https://img.shields.io/badge/dotenv-#ECD53F?style=for-the-badge&logo=dotenv&logoColor=white"> <img src="https://img.shields.io/badge/discord-#5865F2?style=for-the-badge&logo=discord&logoColor=white"> <img src="https://img.shields.io/badge/poetry-#60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> 
+<img src="https://img.shields.io/badge/dotenv-ECD53F?style=for-the-badge&logo=dotenv&logoColor=white"> <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white"> <img src="https://img.shields.io/badge/poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> 
 
 ## 사용법
 
