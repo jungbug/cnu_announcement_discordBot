@@ -23,9 +23,9 @@ poetry install
 
 ### Env Setting (API Keys, ...)
 ```bash
-cp base.env .env
+cp ./src/cnudicobot/driver/env/base.env ./src/cnudicobot/driver/env/.env
 ```
-- And fill the blanks in .env file
+And fill the blanks in .env file
 
 ### Run Noticer
 ```bash
