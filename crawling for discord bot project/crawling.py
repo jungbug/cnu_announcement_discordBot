@@ -43,7 +43,8 @@ if __name__ == "__main__":
     url = urls["board_url"]
     html = get_html(url)
     posts = parse_html(html)
-    print(clean_data(posts))
+    posts = clean_data(posts)
+    print(posts)
 
 
 
