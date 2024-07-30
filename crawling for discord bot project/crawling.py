@@ -11,7 +11,7 @@ def get_html(url):
         return None
 
 
-def parse_html(html):
+def post_parser(html):
     soup = BeautifulSoup(html, 'html.parser')
     posts = []
     rows = soup.find_all("tr")
@@ -31,6 +31,18 @@ def parse_html(html):
     return posts
 
 
+def contents_parser(posts):
+    contents_list = []
+    for post in posts:
+        post_url = post["본문링크"]
+        soup = BeautifulSoup(get_html(post_url), 'html.parser')
+        trs = soup.find_all("tr")
+        for tr in trs:
+            contents = tr.find("div", class_="fr-view")
+            contents_list.append(contents.get_text(strip=True).strip()) if contents else ''
+    return contents_list
+
+
 def clean_data(posts):
     posts.pop(0)
     for post in posts:
@@ -39,11 +51,19 @@ def clean_data(posts):
     return posts
 
 
+def add_post_contents(posts, contents):
+    for num in range(len(posts)):
+        posts[num]["내용"] = contents[num]
+
+
+
 if __name__ == "__main__":
     url = urls["board_url"]
     html = get_html(url)
-    posts = parse_html(html)
+    posts = post_parser(html)
     posts = clean_data(posts)
+    contents = contents_parser(posts)
+    add_post_contents(posts, contents)
     print(posts)
 
 
