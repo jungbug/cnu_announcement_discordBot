@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -37,10 +39,8 @@ def contents_parser(posts):
     for post in posts:
         post_url = post["본문링크"]
         soup = BeautifulSoup(get_html(post_url), 'html.parser')
-        trs = soup.find_all("tr")
-        for tr in trs:
-            contents = tr.find("div", class_="fr-view")
-            contents_list.append(contents.get_text(strip=True).strip()) if contents else ''
+        content = soup.find("div", class_="fr-view")
+        contents_list.append(content.get_text(strip=True).strip()) if content else contents_list.append('')
     return contents_list
 
 
@@ -57,6 +57,15 @@ def add_post_contents(posts, contents):
         posts[num]["내용"] = contents[num]
 
 
+def add_post_tables(posts, dfs):
+    if len(dfs) != 0:
+        post["is_table"] = 1
+        post["table"] = [df.to_json(orient='split') for df in dfs]
+    else:
+        post["is_table"] = 0
+        post["table"] = None
+
+
 def parse_html_table(table):
     rows = table.find_all("tr")
     table_data = []
@@ -67,8 +76,6 @@ def parse_html_table(table):
         tds = row.find_all(["td", "th"])
         row_data = []
         col_idx = 0
-
-        # Handle previously encountered rowspans
         while col_idx in rowspan_dict:
             if rowspan_dict[col_idx][1] > 0:
                 row_data.append(rowspan_dict[col_idx][0])
@@ -81,7 +88,13 @@ def parse_html_table(table):
 
         for td in tds:
             spans = td.find_all("span")
-            cell_text = " ".join([span.get_text(strip=True) for span in spans])
+            ps = td.find_all("p")
+            if spans:
+                cell_text = " ".join([span.get_text(strip=True) for span in spans])
+            elif ps:
+                cell_text = " ".join([p.get_text(strip=True) for p in ps])
+            else:
+                cell_text = td.get_text(strip=True)
             colspan = int(td.get("colspan", 1))
             rowspan = int(td.get("rowspan", 1))
 
@@ -101,28 +114,42 @@ def parse_html_table(table):
     return pd.DataFrame(table_data, columns=columns)
 
 
-def find_table(soup):
+
+def find_tables(soup):
     trs = soup.find_all("tr")
+    tables = []
+    seen_tables = set()
     for tr in trs:
         is_td = tr.find("td", class_="b-no-right")
         is_div = is_td.find("div", class_="fr-view") if is_td else None
         table_elements = is_div.find_all("table") if is_div else None
         if table_elements:
-            return table_elements[0]
-    return None
+            for table in table_elements:
+                table_str = str(table)
+                if table_str not in seen_tables:
+                    seen_tables.add(table_str)
+                    tables.append(table)
+    return tables
 
 
 def table_main(post_url):
     soup = BeautifulSoup(get_html(post_url), 'html.parser')
-    table = find_table(soup)
-    if table:
+    tables = find_tables(soup)
+    dfs = []
+    for table in tables:
         df = parse_html_table(table)
         pd.set_option('display.max_colwidth', None)
         pd.set_option('display.width', None)
         pd.set_option('display.max_columns', None)
-        return df
-    else:
-        return None
+        dfs.append(df)
+    return dfs
+
+
+def save_to_json(data, filename):
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+
 
 
 
@@ -136,12 +163,13 @@ if __name__ == "__main__":
     contents = contents_parser(posts)
     add_post_contents(posts, contents)
     for post in posts:
-        if post["번호"] == '219' or '218' or '215':
-            print(post)
-    for num in range(len(posts)):
-        post_url = posts[num]["본문링크"]
-        print(posts[num]["번호"])
-        print(table_main(post_url))
+        post_url = post["본문링크"]
+        print(post["번호"])
+        dfs = table_main(post_url)
+        add_post_tables(posts, dfs)
+        for df in dfs:
+            print(df)
+    save_to_json(posts,'posts_data.json')
 
 
 
