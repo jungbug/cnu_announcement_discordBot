@@ -1,3 +1,4 @@
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from info import urls
@@ -56,6 +57,74 @@ def add_post_contents(posts, contents):
         posts[num]["내용"] = contents[num]
 
 
+def parse_html_table(table):
+    rows = table.find_all("tr")
+    table_data = []
+    columns = []
+    rowspan_dict = {}
+
+    for i, row in enumerate(rows):
+        tds = row.find_all(["td", "th"])
+        row_data = []
+        col_idx = 0
+
+        # Handle previously encountered rowspans
+        while col_idx in rowspan_dict:
+            if rowspan_dict[col_idx][1] > 0:
+                row_data.append(rowspan_dict[col_idx][0])
+                rowspan_dict[col_idx][1] -= 1
+                if rowspan_dict[col_idx][1] == 0:
+                    del rowspan_dict[col_idx]
+                col_idx += 1
+            else:
+                del rowspan_dict[col_idx]
+
+        for td in tds:
+            spans = td.find_all("span")
+            cell_text = " ".join([span.get_text(strip=True) for span in spans])
+            colspan = int(td.get("colspan", 1))
+            rowspan = int(td.get("rowspan", 1))
+
+            for _ in range(colspan):
+                row_data.append(cell_text)
+                if rowspan > 1:
+                    rowspan_dict[col_idx] = [cell_text, rowspan - 1]
+                col_idx += 1
+
+        if i == 0:
+            columns = row_data
+        else:
+            while len(row_data) < len(columns):
+                row_data.append("")
+            table_data.append(row_data)
+
+    return pd.DataFrame(table_data, columns=columns)
+
+
+def find_table(soup):
+    trs = soup.find_all("tr")
+    for tr in trs:
+        is_td = tr.find("td", class_="b-no-right")
+        is_div = is_td.find("div", class_="fr-view") if is_td else None
+        table_elements = is_div.find_all("table") if is_div else None
+        if table_elements:
+            return table_elements[0]
+    return None
+
+
+def table_main(post_url):
+    soup = BeautifulSoup(get_html(post_url), 'html.parser')
+    table = find_table(soup)
+    if table:
+        df = parse_html_table(table)
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_columns', None)
+        return df
+    else:
+        return None
+
+
 
 
 
@@ -66,7 +135,14 @@ if __name__ == "__main__":
     posts = clean_data(posts)
     contents = contents_parser(posts)
     add_post_contents(posts, contents)
-    print(posts)
+    for post in posts:
+        if post["번호"] == '219' or '218' or '215':
+            print(post)
+    for num in range(len(posts)):
+        post_url = posts[num]["본문링크"]
+        print(posts[num]["번호"])
+        print(table_main(post_url))
+
 
 
 
