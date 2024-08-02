@@ -55,6 +55,8 @@ def add_post_contents(posts, contents):
     for num in range(len(posts)):
         posts[num]["내용"] = contents[num]
 
+print()
+
 
 
 if __name__ == "__main__":
