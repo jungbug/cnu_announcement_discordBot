@@ -114,7 +114,6 @@ def parse_html_table(table):
     return pd.DataFrame(table_data, columns=columns)
 
 
-
 def find_tables(soup):
     trs = soup.find_all("tr")
     tables = []
@@ -150,11 +149,6 @@ def save_to_json(data, filename):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
-
-
-
-
-
 if __name__ == "__main__":
     url = urls["board_url"]
     html = get_html(url)
@@ -162,6 +156,8 @@ if __name__ == "__main__":
     posts = clean_data(posts)
     contents = contents_parser(posts)
     add_post_contents(posts, contents)
+    for post in posts:
+        print(post)
     for post in posts:
         post_url = post["본문링크"]
         print(post["번호"])
