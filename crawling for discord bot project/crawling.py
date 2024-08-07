@@ -1,9 +1,9 @@
-import json
-
+from IPython.display import display
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from info import urls
+
 
 
 def get_html(url):
@@ -14,7 +14,7 @@ def get_html(url):
         return None
 
 
-def post_parser(html):
+def post_crawler(html):
     soup = BeautifulSoup(html, 'html.parser')
     posts = []
     rows = soup.find_all("tr")
@@ -25,16 +25,16 @@ def post_parser(html):
         writer = row.find('span', class_="b-writer")
         views = row.find('span', class_="hit")
         post_data = {'번호': number.get_text(strip=True) if number else '',
-                       '제목': title_box.a.get_text(strip=True) if title_box and title_box.a else '',
-                       "작성자": writer.get_text(strip=True) if writer else '',
-                       '날짜': date.get_text(strip=True) if writer else '',
-                       "조회수": views.get_text(strip=True) if views else '',
-                       "본문링크": url + title_box.a['href'] if title_box and title_box.a else ''}
+                     '제목': title_box.a.get_text(strip=True) if title_box and title_box.a else '',
+                     "작성자": writer.get_text(strip=True) if writer else '',
+                     '날짜': date.get_text(strip=True) if writer else '',
+                     "조회수": views.get_text(strip=True) if views else '',
+                     "본문링크": url + title_box.a['href'] if title_box and title_box.a else ''}
         posts.append(post_data)
     return posts
 
 
-def contents_parser(posts):
+def contents_crawler(posts):
     contents_list = []
     for post in posts:
         post_url = post["본문링크"]
@@ -42,6 +42,26 @@ def contents_parser(posts):
         content = soup.find("div", class_="fr-view")
         contents_list.append(content.get_text(strip=True).strip()) if content else contents_list.append('')
     return contents_list
+
+
+def image_crawler(posts):
+    img_list = []
+    for post in posts:
+        post_url = post["본문링크"]
+        soup = BeautifulSoup(get_html(post_url), 'html.parser')
+        div = soup.find("div", "fr-view")
+        img_tags = div.find_all('img')
+        if img_tags:
+            img_srcs = [img['src'] if 'src' in img.attrs and "https://homepage.cnu.ac.kr" in img['src'] else 'https://ai.cnu.ac.kr' + img['src'] for img in img_tags]
+            img_list.append(''.join(img_srcs) if len(img_srcs) == 1 else img_srcs)
+        else:
+            img_list.append(None)
+    return img_list
+
+
+def add_post_images(posts, imgs):
+    for num in range(len(posts)):
+        posts[num]["이미지"] = imgs[num]
 
 
 def clean_data(posts):
@@ -111,51 +131,64 @@ def parse_html_table(table):
                 row_data.append("")
             table_data.append(row_data)
 
-    return pd.DataFrame(table_data, columns=columns)
+    # Check if table_data and columns have the correct format
+    if len(columns) > 1 and all(len(row) == len(columns) for row in table_data):
+        return pd.DataFrame(table_data, columns=columns)
+    else:
+        return None
 
 
-def find_tables(soup):
-    trs = soup.find_all("tr")
-    tables = []
+def find_valid_tables(soup):
+    div = soup.find("div", class_="fr-view")
+    if not div:
+        return []
+
+    tables = div.find_all("table")
+    valid_tables = []
     seen_tables = set()
-    for tr in trs:
-        is_td = tr.find("td", class_="b-no-right")
-        is_div = is_td.find("div", class_="fr-view") if is_td else None
-        table_elements = is_div.find_all("table") if is_div else None
-        if table_elements:
-            for table in table_elements:
-                table_str = str(table)
+
+    for table in tables:
+        nested_tables = table.find_all("table")
+        if nested_tables:
+            for nested_table in nested_tables:
+                table_str = str(nested_table)
                 if table_str not in seen_tables:
                     seen_tables.add(table_str)
-                    tables.append(table)
-    return tables
+                    df = parse_html_table(nested_table)
+                    if df is not None:
+                        valid_tables.append(df)
+        else:
+            table_str = str(table)
+            if table_str not in seen_tables:
+                seen_tables.add(table_str)
+                df = parse_html_table(table)
+                if df is not None:
+                    valid_tables.append(df)
+
+    return valid_tables
 
 
 def table_main(post_url):
     soup = BeautifulSoup(get_html(post_url), 'html.parser')
-    tables = find_tables(soup)
+    tables = find_valid_tables(soup)
     dfs = []
     for table in tables:
-        df = parse_html_table(table)
         pd.set_option('display.max_colwidth', None)
         pd.set_option('display.width', None)
         pd.set_option('display.max_columns', None)
-        dfs.append(df)
+        dfs.append(table)
     return dfs
 
 
-def save_to_json(data, filename):
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-
 if __name__ == "__main__":
-    url = urls["board_url"]
+    url = urls["학사공지"]
     html = get_html(url)
-    posts = post_parser(html)
+    posts = post_crawler(html)
     posts = clean_data(posts)
-    contents = contents_parser(posts)
+    contents = contents_crawler(posts)
     add_post_contents(posts, contents)
+    img = image_crawler(posts)
+    add_post_images(posts, img)
     for post in posts:
         print(post)
     for post in posts:
@@ -164,9 +197,6 @@ if __name__ == "__main__":
         dfs = table_main(post_url)
         add_post_tables(posts, dfs)
         for df in dfs:
-            print(df)
-    save_to_json(posts,'posts_data.json')
-
-
+            display(df)
 
 
