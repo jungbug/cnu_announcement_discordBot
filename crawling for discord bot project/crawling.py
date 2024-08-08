@@ -56,6 +56,29 @@ class Parser:
         else:
             post["이미지"] = None
 
+    def parse_files(self, post, content_soup):
+        total_file = []
+        file_box = content_soup.find("div", class_="b-file-box")
+        lis = file_box.find_all("li") if file_box else []
+        for li in lis:
+            file_dict = {}
+            file = li.find_all("a")
+            if len(file) > 0:
+                file_dict["다운로드"] = "https://ai.cnu.ac.kr/ai/board/notice.do?" + file[0]["href"]
+            if len(file) > 1:
+                file_dict["미리보기"] = "https://ai.cnu.ac.kr" + file[1]["href"]
+            if file_dict:
+                total_file.append(file_dict)
+        if total_file:
+            if len(total_file) >= 2:
+                post["첨부파일"] = total_file
+            else:
+                post["첨부파일"] = ''.join(str(a) for a in total_file)
+        else:
+            post["첨부파일"] = None
+
+
+
 
 class DataCleaner:
     def __init__(self, posts):
@@ -118,11 +141,13 @@ class TableParser:
                     row_data.append("")
                 table_data.append(row_data)
 
-        # Check if table_data and columns have the correct format
-        if len(columns) > 1 and all(len(row) == len(columns) for row in table_data):
-            return pd.DataFrame(table_data, columns=columns)
-        else:
-            return None
+        # Check if table_data and columns have the correct format and if columns contain meaningful data
+        if len(columns) > 1 and all(len(row) == len(columns) for row in table_data) and len(table_data) > 0:
+            # Check if columns contain actual text
+            if any(column.strip() for column in columns):
+                return pd.DataFrame(table_data, columns=columns)
+
+        return None
 
     def find_valid_tables(self, soup):
         div = soup.find("div", class_="fr-view")
@@ -177,15 +202,15 @@ class NoticeCrawler:
     def crawl(self):
         self.parser.parse_post_list(self.base_url)
         self.cleaner.clean_data()
-        self.parse_contents_and_images()
-        self.parse_tables()
+        self.parse_contents_and_images_and_files()
 
-    def parse_contents_and_images(self):
+    def parse_contents_and_images_and_files(self):
         for post in self.parser.posts:
             post_url = post["본문링크"]
             content_soup = BeautifulSoup(self.crawler.get_html(post_url), 'html.parser')
             self.parser.parse_contents(post, content_soup)
             self.parser.parse_images(post, content_soup)
+            self.parser.parse_files(post, content_soup)
 
     def parse_tables(self):
         for post in self.parser.posts:
@@ -211,5 +236,4 @@ if __name__ == "__main__":
     crawler.crawl()
     for post in crawler.parser.posts:
         print(post)
-    crawler.display_tables()
 
