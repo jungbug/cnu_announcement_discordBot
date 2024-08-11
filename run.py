@@ -1,3 +1,3 @@
-from src.cnudicobot.main import bot, discord_token
+from src.cnudicobot.main import main
 
-bot.run(discord_token)
+main()
