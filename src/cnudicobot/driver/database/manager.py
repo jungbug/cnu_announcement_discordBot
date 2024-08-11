@@ -27,11 +27,14 @@ def create_board(board_name: str) -> model.Boards | None:
     return new_board
 
 
-def get_last_post_id(board_name: str) -> Tuple[int, model.Boards | None]:
+def get_last_post_id(board_name: str) -> Tuple[int | None, model.Boards | None]:
     board: model.Boards = db.query(model.Boards).filter(model.Boards.name == board_name).first()
     if board is None:
         return -1, None
-    return board.last_post_id, board
+    elif board.last_post_id is 0:
+        return None, board
+    else:
+        return board.last_post_id, board
 
 
 def update_last_post_id(new_post_id: int, board_name: str | None = None, board_obj: model.Boards | None = None):
