@@ -1,17 +1,8 @@
-import discord
-from discord.ext import commands, tasks
-
 TOKEN = 'TOKEN'
-
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True  # 서버 멤버 인텐트 활성화
-intents.presences = True  # 프레즌스 인텐트 활성화
-
-bot = commands.Bot(command_prefix='!', intents=intents)
 
 # 포럼 채널 ID를 여기에 입력하세요
 FORUM_CHANNEL_ID = 1271636906614063258
+
 
 # 주기적으로 포스트를 생성하는 태스크
 @tasks.loop(hours=24)  # 24시간마다 실행
@@ -32,7 +23,6 @@ async def create_forum_post():
         if thread:
             print(f'Thread created: {thread.name}')
 
-            second_text = """
             # 스레드에 두 번째 본문 텍스트 추가
             await thread.send(content=second_text)
 
@@ -46,5 +36,3 @@ async def create_forum_post():
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
     create_forum_post.start()  # 봇이 실행될 때 태스크 시작
-
-bot.run(TOKEN)

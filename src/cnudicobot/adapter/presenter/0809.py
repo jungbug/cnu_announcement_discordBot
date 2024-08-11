@@ -1,22 +1,12 @@
-# 뉴스 스크랩 하는 구글글 참고했어요 ㅜㅜ https://junia3.github.io/blog/crawlerbot
-# 최신글 디스코드 메시지 보내기
-import discord
-from discord.ext import commands, tasks
-import requests
-from bs4 import BeautifulSoup
-
 # 마지막 스크랩 제목
 last_scraped_title = ""
 
-# 초기화
-intents = discord.Intents.default()
-intents.message_content = True  # 메시지 내용 읽기 권한
 
 # Bot TOKEN, SERVER ID, CHANNEL ID
 TOKEN = 'TOEKN'  # 실제 토큰으로 교체
 GUILD_ID = 1264888980684406796
 CHANNEL_ID = 1264888981187858465
-bot = commands.Bot(command_prefix='!', intents=intents)
+
 
 @bot.event
 async def on_ready():
@@ -25,6 +15,7 @@ async def on_ready():
     channel = discord.utils.get(guild.text_channels, id=CHANNEL_ID)
     # Start the notice scraping task
     notice_sender.start(channel)
+
 
 # 1시간마다 새로운 공지사항 가져오도록 루프 돌리는 함수
 @tasks.loop(minutes=60)
@@ -42,6 +33,7 @@ async def notice_sender(channel):
             print("Keep waiting for another notice ...")
     else:
         print("No new notices found.")
+
 
 # url, 제목, 내용 스크랩하는 함수
 def scrape_notice():
@@ -85,12 +77,14 @@ def scrape_notice():
 
     return None
 
+
 def get_image_url(soup):
     # 이미지 URL 추출
     image_tag = soup.select_one('#jwxe_main_content img')
     if image_tag and image_tag.get('src'):
         return image_tag.get('src')
     return None
+
 
 def format_notice_content(content, url_result):
     # 기본 내용 포맷팅
@@ -108,6 +102,7 @@ def format_notice_content(content, url_result):
 
     return formatted_content
 
+
 # 디스코드로 공지사항을 보내는 함수
 async def send_notice(channel, notice):
     embed = discord.Embed(
@@ -124,5 +119,3 @@ async def send_notice(channel, notice):
     embed.set_footer(text="충남대학교 AI 관련 공지사항")
 
     await channel.send(embed=embed)
-
-bot.run(TOKEN)

@@ -1,33 +1,28 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from ...env.settings import *
 
 
+# Create intent configuration
 intents = discord.Intents.default()
+
+# Grant permissions to read message content, presences, and members
 intents.message_content = True
 intents.presences = True
 intents.members = True
+
+# Create a bot instance
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 
-async def run_function_hourly():
-    seoul = pytz.timezone('Asia/Seoul')
-
-    while True:
-        now = datetime.datetime.now(seoul)
-
-        if now.hour >= 8 and now.hour < 18:
-            await my_function()
-
-        await asyncio.sleep(3600)
+def on_ready(func):
+    @bot.event
+    async def wrapped():
+        print(f"INFO: Logged in as {bot.user.name}")
+        await func()
+    return wrapped
 
 
-@bot.event
-async def on_ready():
-    print(f'{bot.user}이(가) 준비 완료되었습니다.')
-    await run_function_hourly()
-
-
-if __name__ == '__main__':
-    bot.run(discord_token)
+def run():
+    bot.run(TOKEN)
