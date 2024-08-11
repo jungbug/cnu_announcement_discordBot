@@ -49,7 +49,7 @@ class NoticeBoard:
     def get_new_posts(self) -> dict[int: dict] | None:
         # get updated posts indexed from last_post_id to latest
         # if last_post_id is None, get just last post
-        last_post_id, board_obj = self._gat_last_post_id()
+        last_post_id, board_obj = self._get_last_post_id()
         new_posts = {}  # TODO: Implement get_new_posts by using web scraping
         new_last_post_id = tuple(new_posts.keys())[-1] if new_posts else None
 
