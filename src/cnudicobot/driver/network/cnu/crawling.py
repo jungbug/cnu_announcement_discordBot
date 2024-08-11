@@ -1,16 +1,16 @@
-from IPython.display import display
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from info import urls
+
+import pandas as pd
 
 
 class Crawler:
-    def __init__(self, base_url):
+    def __init__(self, base_url: str):
         self.base_url = base_url
 
-    def get_html(self, url):
-        response = requests.get(url)
+    @staticmethod
+    def get_html(request_url: str) -> str | None:
+        response = requests.get(request_url)
         if response.status_code == 200:
             return response.text
         else:
@@ -183,9 +183,6 @@ class TableParser:
         tables = self.find_valid_tables(soup)
         dfs = []
         for table in tables:
-            pd.set_option('display.max_colwidth', None)
-            pd.set_option('display.width', None)
-            pd.set_option('display.max_columns', None)
             dfs.append(table)
         return dfs
 
@@ -222,12 +219,6 @@ class NoticeCrawler:
             else:
                 post["is_table"] = 0
                 post["table"] = None
-
-    def display_tables(self):
-        for post in self.parser.posts:
-            if post["is_table"] == 1:
-                for df in post["table"]:
-                    display(df)
 
 
 if __name__ == "__main__":
