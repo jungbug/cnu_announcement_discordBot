@@ -32,6 +32,7 @@ async def create_forum_post():
         else:
             print('Failed to create thread.')
 
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
