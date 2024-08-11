@@ -10,6 +10,12 @@ cnu_base_url = os.getenv("BASE_URL")
 cnu_front_url = os.getenv("FRONT_URL")
 
 
+# Database settings
+db_file_path = os.path.join(os.path.dirname(__file__), "log.db")
+DATABASE_URL = f"sqlite:///{db_file_path}"
+
+
+# Target board URLs
 class TargetBoardURLS(dict):
     BASE_URL = "https://ai.cnu.ac.kr/ai/board/"
 
@@ -34,5 +40,8 @@ class TargetBoardURLS(dict):
             학과주최행사=self.events
         )
 
+        for key, value in self.items():
+            setattr(self, key, value)
 
-target_board_urls = TargetBoardURLS()
+
+TargetBoardURLS = TargetBoardURLS()  # Singleton instance
