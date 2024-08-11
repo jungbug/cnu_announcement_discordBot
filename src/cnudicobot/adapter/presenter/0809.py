@@ -37,11 +37,7 @@ async def notice_sender(channel):
 
 # url, 제목, 내용 스크랩하는 함수
 def scrape_notice():
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'
-    }
-    response = requests.get('https://ai.cnu.ac.kr/ai/board/notice.do', headers=headers)
-    soup = BeautifulSoup(response.text, 'html.parser')
+
 
     title = soup.select_one('#jwxe_main_content > div > div > div.bn-list-common01.type01.bn-common > table > tbody')
 

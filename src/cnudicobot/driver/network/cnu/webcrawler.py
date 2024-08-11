@@ -1,6 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 
+# TODO: Pretend that the crawler is a normal browser by setting the User-Agent header
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"
+
 
 class Crawler:
     def __init__(self, base_url: str):
@@ -8,13 +11,15 @@ class Crawler:
 
     @staticmethod
     def get_html(request_url: str) -> str | None:
-        response = requests.get(request_url)
+        response = requests.get(request_url, headers={
+            'User-Agent': USER_AGENT
+        })
         if response.status_code == 200:
             return response.text
         else:
             return None
 
-    def fetch_posts(self):
+    def fetch_posts(self) -> BeautifulSoup:
         html = self.get_html(self.base_url)
         soup = BeautifulSoup(html, 'html.parser')
         return soup
