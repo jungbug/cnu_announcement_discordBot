@@ -1,6 +1,7 @@
 ##################################
 # Entity class for the Discord Bot
 ##################################
+import usecase
 
 
 class NoticeDiscordBot:
@@ -13,8 +14,8 @@ class NoticeDiscordBot:
 
     def __init__(self):
         """ Register use cases """
-        pass
+        self.runner = usecase.register_task(usecase.register_notice_board)
 
     def run(self):
         """ Run use cases """
-        pass
+        self.runner()

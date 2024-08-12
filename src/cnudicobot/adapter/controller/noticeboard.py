@@ -17,15 +17,17 @@ class NoticeBoard:
     _board_urls = TargetBoardURLS
 
     @classmethod
-    def __getitem__(cls, item) -> NoticeBoard:
-        if item not in cls._boards:
-            if item in cls._board_names:
-                cls._boards[item] = cls()
+    def get_instance(cls, board_name: str | None) -> NoticeBoard | list[NoticeBoard]:
+        if board_name is None:
+            return [cls.get_instance(name) for name in cls._board_names]
+        elif board_name not in cls._boards:
+            if board_name in cls._board_names:
+                cls._boards[board_name] = cls(board_name, cls._board_urls[board_name])
             else:
-                raise KeyError(f"Board {item} not found in board name list {cls._board_names}")
-        return cls._boards[item]
+                raise KeyError(f"Board {board_name} not found in board name list {cls._board_names}")
+        return cls._boards[board_name]
 
-    def __init__(self, board_name, board_url):
+    def __init__(self, board_name: str, board_url: str):
         self._name = board_name
         self._board_url = board_url
         self._get_last_post_id = lambda: manager.get_last_post_id(self._name)
