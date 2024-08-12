@@ -1,33 +1,35 @@
-import discord
-from discord.ext import commands
+from typing import Callable
 
-from ...env.settings import *
+from discord import *
+from discord.ext import commands, tasks
+
+from ...env.settings import DiscordAPISettings
 
 
-intents = discord.Intents.default()
+# Create intent configuration
+intents = Intents.default()
+
+# Grant permissions to read message content, presences, and members
 intents.message_content = True
 intents.presences = True
 intents.members = True
-bot = commands.Bot(command_prefix='!', intents=intents)
 
 
-async def run_function_hourly():
-    seoul = pytz.timezone('Asia/Seoul')
+# Create a bot instance
+def create_bot() -> tuple[callable, callable, callable, Callable[[int], abc.GuildChannel]]:
+    bot = commands.Bot(command_prefix='!', intents=intents)
 
-    while True:
-        now = datetime.datetime.now(seoul)
+    def on_ready(func):
+        @bot.event
+        async def wrapped():
+            print(f"INFO: Logged in as {bot.user.name}")
+            func()
+        return wrapped
 
-        if now.hour >= 8 and now.hour < 18:
-            await my_function()
+    def run():
+        bot.run(DiscordAPISettings.token)
 
-        await asyncio.sleep(3600)
+    def get_channel(channel_id: int) -> TextChannel:
+        return bot.get_channel(channel_id)
 
-
-@bot.event
-async def on_ready():
-    print(f'{bot.user}이(가) 준비 완료되었습니다.')
-    await run_function_hourly()
-
-
-if __name__ == '__main__':
-    bot.run(discord_token)
+    return run, on_ready, tasks.loop, get_channel

@@ -1,25 +1,6 @@
-from IPython.display import display
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-from info import urls
 
-
-class Crawler:
-    def __init__(self, base_url):
-        self.base_url = base_url
-
-    def get_html(self, url):
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.text
-        else:
-            return None
-
-    def fetch_posts(self):
-        html = self.get_html(self.base_url)
-        soup = BeautifulSoup(html, 'html.parser')
-        return soup
+from .webcrawler import Crawler, NoticeCrawler
 
 
 class Parser:
@@ -76,8 +57,6 @@ class Parser:
                 post["첨부파일"] = ''.join(str(a) for a in total_file)
         else:
             post["첨부파일"] = None
-
-
 
 
 class DataCleaner:
@@ -183,57 +162,5 @@ class TableParser:
         tables = self.find_valid_tables(soup)
         dfs = []
         for table in tables:
-            pd.set_option('display.max_colwidth', None)
-            pd.set_option('display.width', None)
-            pd.set_option('display.max_columns', None)
             dfs.append(table)
         return dfs
-
-
-class NoticeCrawler:
-    def __init__(self, base_url):
-        self.base_url = base_url
-        self.crawler = Crawler(base_url)
-        self.soup = self.crawler.fetch_posts()
-        self.parser = Parser(self.soup)
-        self.cleaner = DataCleaner(self.parser.posts)
-        self.table_parser = TableParser(base_url)
-
-    def crawl(self):
-        self.parser.parse_post_list(self.base_url)
-        self.cleaner.clean_data()
-        self.parse_contents_and_images_and_files()
-
-    def parse_contents_and_images_and_files(self):
-        for post in self.parser.posts:
-            post_url = post["본문링크"]
-            content_soup = BeautifulSoup(self.crawler.get_html(post_url), 'html.parser')
-            self.parser.parse_contents(post, content_soup)
-            self.parser.parse_images(post, content_soup)
-            self.parser.parse_files(post, content_soup)
-
-    def parse_tables(self):
-        for post in self.parser.posts:
-            post_url = post["본문링크"]
-            dfs = self.table_parser.table_main(post_url)
-            if dfs:
-                post["is_table"] = 1
-                post["table"] = dfs
-            else:
-                post["is_table"] = 0
-                post["table"] = None
-
-    def display_tables(self):
-        for post in self.parser.posts:
-            if post["is_table"] == 1:
-                for df in post["table"]:
-                    display(df)
-
-
-if __name__ == "__main__":
-    url = urls["학사공지"]
-    crawler = NoticeCrawler(url)
-    crawler.crawl()
-    for post in crawler.parser.posts:
-        print(post)
-
